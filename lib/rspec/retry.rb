@@ -125,7 +125,7 @@ module RSpec
 
         self.attempts += 1
 
-        break if example.exception.nil?
+        break unless failed?(example)
 
         example.metadata[:retry_exceptions] << example.exception
 
@@ -184,6 +184,17 @@ module RSpec
       list.any? do |exception_klass|
         exception.is_a?(exception_klass) || exception_klass === exception
       end
+    end
+
+    # https://github.com/mattheworiordan/capybara-screenshot/pull/213
+    def failed?(example)
+      return true if example.exception
+      return false unless defined?(::RSpec::Expectations::FailureAggregator)
+
+      failure_notifier = ::RSpec::Support.failure_notifier
+      return false unless failure_notifier.is_a?(::RSpec::Expectations::FailureAggregator)
+
+      failure_notifier.failures.any? || failure_notifier.other_errors.any?
     end
   end
 end
